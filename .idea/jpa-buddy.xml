@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="JpaBuddyIdeaProjectConfig" migrateIndexesAndConstraints="true">
+    <option name="defaultUnitInitialized" value="true" />
+    <option name="renamerInitialized" value="true" />
+    <option name="reverseEngineeringLastDbConnectionId" value="ee56951b-be75-4314-91f0-ca0cd9c8f7c7_catus" />
+    <option name="reLastEntityCreationPackage" value="src/main/java/com/ishingarov/catus/model" />
+    <option name="newEntityIdStrategy" />
+  </component>
+</project>

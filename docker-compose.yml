@@ -1,0 +1,83 @@
+version: "2"
+services:
+  test-server:
+    container_name: catus-compose-test
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: test-catus:latest
+    depends_on:
+      - db
+    environment:
+      - DB_USER=postgres
+      - DB_PASS=pass
+      - DB_URL=jdbc:postgresql://db:5432/postgres
+    ports:
+      - "1234:8080"
+
+  catus-instance-1:
+    container_name: catus-compose-test1
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: test-catus:latest
+    depends_on:
+      - db
+    environment:
+      - DB_USER=postgres
+      - DB_PASS=pass
+      - DB_URL=jdbc:postgresql://db:5432/postgres
+    ports:
+      - "8081:8080"
+
+  catus-instance-2:
+    container_name: catus-compose-test2
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: test-catus:latest
+    depends_on:
+      - db
+    environment:
+      - DB_USER=postgres
+      - DB_PASS=pass
+      - DB_URL=jdbc:postgresql://db:5432/postgres
+    ports:
+      - "8082:8080"
+
+  catus-instance-3:
+    container_name: catus-compose-test3
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: test-catus:latest
+    depends_on:
+      - db
+    environment:
+      - DB_USER=postgres
+      - DB_PASS=pass
+      - DB_URL=jdbc:postgresql://db:5432/postgres
+    ports:
+      - "8083:8080"
+
+  db:
+    image: postgres:latest
+    container_name: test-db
+    environment:
+      - POSTGRES_PASSWORD=pass
+    volumes:
+      - ./sql/schema.sql:/docker-entrypoint-initdb.d/create.sql
+
+  nginx:
+    container_name: nginx
+    image: nginx
+    volumes:
+      - ./nginx:/etc/nginx/conf.d
+      - ./web/static:/var/www/html
+    ports:
+      - "80:80"
+    links:
+      - test-server
+      - catus-instance-1
+      - catus-instance-2
+      - catus-instance-3
