@@ -1,8 +1,7 @@
 package com.ishingarov.catus.model.domain;
 
 import com.ishingarov.catus.model.entity.Task;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
+import org.mapstruct.*;
 
 import java.util.List;
 
@@ -23,4 +22,11 @@ public interface TaskModelMapper {
     @Mapping(target = "comments", ignore = true)
     @Mapping(target = "createDttm", ignore = true)
     Task toEntity(TaskModel model);
+
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mapping(target = "createdBy", ignore = true)
+    @Mapping(target = "project", ignore = true)
+    @Mapping(target = "status", source = "model.taskStatus")
+    @Mapping(target = "comments", ignore = true)
+    Task toEntity(TaskModel model, @MappingTarget Task entity);
 }

@@ -39,9 +39,11 @@ public class Project {
     @JoinColumn(name = "created_by", nullable = false)
     private User createdBy;
 
+    @Builder.Default
     @OneToMany(mappedBy = "project")
     private Set<Task> tasks = new LinkedHashSet<>();
 
+    @Builder.Default
     @ManyToMany(mappedBy = "projects")
     private Set<User> users = new LinkedHashSet<>();
 

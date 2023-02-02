@@ -7,14 +7,14 @@ import com.ishingarov.catus.dto.user.UserMapper;
 import com.ishingarov.catus.service.TokenService;
 import com.ishingarov.catus.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
@@ -45,14 +45,22 @@ public class AuthController {
         log.trace("Request body: {}", request);
         var user = userService.createUser(
                 userMapper.mapRequestOnModel(request));
-        var token = getTokenByLoginAndPassword(user.login(), user.password());
+        var token = getTokenByLoginAndPassword(request.login(), request.password());
         log.trace("Generated token: {}", token);
         return new TokenResponse(token);
     }
 
+    @Operation(summary = "Обновление токена аутентификации", security = @SecurityRequirement(name = "bearerAuth"))
+    @GetMapping("/token/refresh")
+    @PreAuthorize("isAuthenticated()")
+    public TokenResponse refreshToken(Authentication authentication) {
+        return new TokenResponse(tokenService.generateToken(authentication));
+    }
+
     private String getTokenByLoginAndPassword(String login, String password) {
-        return tokenService.generateToken(authenticationManager
-                .authenticate(new UsernamePasswordAuthenticationToken(login, password)));
+        var auth = authenticationManager
+                .authenticate(new UsernamePasswordAuthenticationToken(login, password));
+        return tokenService.generateToken(auth);
     }
 
 }

@@ -1,14 +1,16 @@
 package com.ishingarov.catus.service;
 
 import com.ishingarov.catus.model.domain.CommentModel;
-import com.ishingarov.catus.model.entity.Comment;
+import com.ishingarov.catus.model.domain.CommentModelMapper;
 import com.ishingarov.catus.repository.CommentRepository;
+import com.ishingarov.catus.repository.TaskRepository;
 import com.ishingarov.catus.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import javax.persistence.EntityNotFoundException;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -16,20 +18,35 @@ import javax.persistence.EntityNotFoundException;
 public class CommentServiceImpl implements CommentService {
 
     private final CommentRepository commentRepository;
-    private final UserRepository userRepository;
+    private final CommentModelMapper commentModelMapper;
+    private final TokenService tokenService;
+    private final TaskRepository taskRepository;
 
     @Override
-    public Comment getCommentById(Integer commentId) {
-        return commentRepository.
-                findById(commentId)
-                .orElseThrow(EntityNotFoundException::new);
+    public CommentModel getCommentById(Integer commentId) {
+        return commentModelMapper.toModel(
+                commentRepository.findById(commentId)
+                        .orElseThrow(EntityNotFoundException::new));
     }
 
     @Override
-    public Comment updateComment(CommentModel comment) {
-        return null;
+    public List<CommentModel> getCommentsByTaskId(Integer taskId) {
+        return commentModelMapper.toModel(commentRepository.findAllByTaskId(taskId));
     }
 
+    @Override
+    public CommentModel updateComment(CommentModel comment) {
+        return commentModelMapper.toModel(
+                commentRepository.save(
+                        commentModelMapper.toEntity(
+                                comment, commentRepository.findById(comment.id())
+                                        .orElseThrow(EntityNotFoundException::new))));
+    }
+
+//    var entity = commentRepository.findById(comment.id()).orElseThrow(EntityNotFoundException::new);
+//    entity = commentModelMapper.toEntity(comment, entity);
+//
+//        return commentModelMapper.toModel(commentRepository.save(entity));
 
     @Override
     public void deleteComment(Integer id) {
@@ -37,16 +54,13 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
-    public Comment createComment(CommentModel comment) {
-
-        var entity = Comment.builder()
-                .id(comment.id())
-                .content(comment.content())
-                .createdBy(userRepository
-                        .getById(comment.userId()))
-                .build();
-
-        return commentRepository.save(entity);
+    public CommentModel createComment(CommentModel comment) {
+        var auth = tokenService.getCurrentUser();
+        var entity = commentModelMapper.toEntity(comment, auth);
+        var task = taskRepository.findById(comment.taskId()).orElseThrow(EntityNotFoundException::new);
+        entity.setTask(task);
+        return commentModelMapper.toModel(
+                commentRepository.save(entity));
     }
 
 }

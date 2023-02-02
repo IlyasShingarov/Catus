@@ -4,11 +4,15 @@ import com.ishingarov.catus.dto.task.*;
 import com.ishingarov.catus.service.ProjectService;
 import com.ishingarov.catus.service.TaskService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
+@SecurityRequirement(name = "bearerAuth")
 @RequestMapping("/api/v1/projects/{projectId}/tasks")
 public class ProjectTaskController {
     private final TaskService taskService;
@@ -44,14 +48,26 @@ public class ProjectTaskController {
 
     @Operation(summary = "Изменить информацию о задаче")
     @PutMapping("/{taskId}")
-    public TaskResponseSlim changeTaskInfo(@PathVariable Integer projectId, @PathVariable Integer taskId) {
-        return null;
+    public TaskResponseFat changeTaskInfo(@PathVariable Integer projectId,
+                                          @PathVariable Integer taskId,
+                                          @RequestBody UpdateTaskRequest request) {
+        var model = taskMapper.toModel(request, projectId, taskId);
+        var task = taskService.changeTaskInfo(model);
+        var response = taskMapper.toFatResponse(task);
+        log.trace("Response payload: {}", response);
+        return response;
     }
 
-    @Operation(summary = "Изменить информацию о задаче")
+    @Operation(summary = "Изменить статус задачи")
     @PatchMapping("/{taskId}")
-    public TaskResponseSlim changeTaskStatus(@PathVariable Integer projectId, @PathVariable Integer taskId) {
-        return null;
+    public TaskResponseSlim changeTaskStatus(@PathVariable Integer projectId,
+                                             @PathVariable Integer taskId,
+                                             @RequestBody UpdateTaskStatusRequest request) {
+        var model = taskMapper.toModel(request, projectId, taskId);
+        var task = taskService.changeTaskStatus(model);
+        var response = taskMapper.toSlimResponse(task);
+        log.trace("Response payload: {}", response);
+        return response;
     }
 
 }

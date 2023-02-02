@@ -42,10 +42,23 @@ public class TaskServiceImpl implements TaskService {
                 taskRepository.save(task));
     }
 
-    // TODO Test
     @Override
     public void deleteTask(Integer taskId) {
         taskRepository.deleteById(taskId);
+    }
+
+    @Override
+    public TaskModel changeTaskInfo(TaskModel model) {
+        var task = taskRepository.findById(model.id())
+                .orElseThrow(EntityNotFoundException::new);
+        task = taskModelMapper.toEntity(model, task);
+        task = taskRepository.save(task);
+        return taskModelMapper.toModel(task);
+    }
+
+    @Override
+    public TaskModel changeTaskStatus(TaskModel model) {
+        return taskModelMapper.toModel(taskRepository.save(taskModelMapper.toEntity(model)));
     }
 
 

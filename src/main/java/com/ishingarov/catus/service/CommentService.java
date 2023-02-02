@@ -1,16 +1,19 @@
 package com.ishingarov.catus.service;
 
 import com.ishingarov.catus.model.domain.CommentModel;
-import com.ishingarov.catus.model.entity.Comment;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public interface CommentService {
-    Comment getCommentById(Integer commentId);
+    CommentModel getCommentById(Integer commentId);
 
-    Comment updateComment(CommentModel comment);
+    List<CommentModel> getCommentsByTaskId(Integer taskId);
+
+    CommentModel updateComment(CommentModel comment);
 
     void deleteComment(Integer id);
 
-    Comment createComment(CommentModel comment);
+    CommentModel createComment(CommentModel comment);
 }

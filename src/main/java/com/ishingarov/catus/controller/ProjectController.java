@@ -5,24 +5,30 @@ import com.ishingarov.catus.dto.user.UserListResponse;
 import com.ishingarov.catus.dto.user.UserMapper;
 import com.ishingarov.catus.model.domain.UserModel;
 import com.ishingarov.catus.service.ProjectService;
+import com.ishingarov.catus.service.TokenService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.constraints.Min;
 import java.util.List;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/projects")
 @RequiredArgsConstructor
+@RequestMapping("/api/v1/projects")
+@SecurityRequirement(name = "bearerAuth")
 @Tag(name = "Проекты", description = "Методы взаимодействия с коллекцией проектов")
 public class ProjectController {
+    private final static String baseUrl = "/api/v1/projects/";
     private final ProjectService projectService;
     private final ProjectMapper projectMapper;
     private final UserMapper userMapper;
-    private final static String baseUrl = "/api/v1/projects/";
+    private final TokenService tokenService;
 
     @Operation(summary = "Получение проекта по его идентификатору")
     @GetMapping("/{projectId}")
@@ -55,11 +61,14 @@ public class ProjectController {
 
     @Operation(summary = "Создание проекта")
     @PostMapping
+    @PreAuthorize("hasAnyAuthority('SCOPE_ADMIN', 'SCOPE_TEACHER')")
     public ProjectResponseSlim createProject(@RequestBody CreateProjectRequest request) {
         log.trace("Got POST request on {}", baseUrl);
 
         log.debug("Creating project '{}'", request.title());
-        var response = projectMapper.toSlimResponse(projectService.createProject(projectMapper.toModel(request)));
+        var response = projectMapper.toSlimResponse(
+                projectService.createProject(
+                        projectMapper.toModel(request)));
         log.trace("Response payload: {}", response);
 
         return response;
@@ -67,6 +76,7 @@ public class ProjectController {
 
     @Operation(summary = "Удаление проекта")
     @DeleteMapping("/{projectId}")
+    @PreAuthorize("@projectAccessProvider.checkIfDeleteAllowed(#projectId)")
     public void deleteProject(@PathVariable Integer projectId) {
         log.trace("Got POST request on {}/{}", baseUrl, projectId);
         log.debug("Deleting project with id '{}'", projectId);
@@ -77,6 +87,7 @@ public class ProjectController {
     // FIXME
     @Operation(summary = "Добавление участника в проект")
     @PutMapping("/{projectId}/users")
+    @PreAuthorize("@projectAccessProvider.checkIfUpdateAllowed(#projectId)")
     public ProjectResponse addUserToProject(@PathVariable Integer projectId,
                                             @RequestBody ProjectAddUserRequest request) {
         log.trace("Got PUT request on {}/{}/users", baseUrl, projectId);
@@ -91,6 +102,7 @@ public class ProjectController {
 
     @Operation(summary = "Обновление информации о проекте")
     @PutMapping("/{projectId}")
+    @PreAuthorize("@projectAccessProvider.checkIfUpdateAllowed(#projectId)")
     public ProjectResponseSlim updateProject(@PathVariable Integer projectId,
                                              @RequestBody UpdateProjectRequest request) {
         log.trace("Got PUT request on {}/{}", baseUrl, projectId);
@@ -106,9 +118,21 @@ public class ProjectController {
     }
 
     @Operation(summary = "Выход из проекта")
+    @DeleteMapping("/{projectId}/users/0")
+    public void deleteUserFromProject(@PathVariable Integer projectId) {
+        log.trace("Got DELETE request on {}/{}/users/0", baseUrl, projectId);
+        var userId = tokenService.getCurrentUser().id();
+        log.debug("Deleting user with id '{}' from project with id '{}'", userId, projectId);
+        projectService.removeMember(projectId, userId);
+        log.debug("Deleted user with id '{}' from project with id '{}'", userId, projectId);
+    }
+
+
+    @Operation(summary = "Выход из проекта")
     @DeleteMapping("/{projectId}/users/{userId}")
+    @PreAuthorize("@projectAccessProvider.checkIfUpdateAllowed(#projectId)")
     public void deleteUserFromProject(@PathVariable Integer projectId,
-                                      @PathVariable Integer userId) {
+                                      @PathVariable @Min(1) Integer userId) {
         log.trace("Got DELETE request on {}/{}/users/{}", baseUrl, projectId, userId);
         log.debug("Deleting user with id '{}' from project with id '{}'", userId, projectId);
         projectService.removeMember(projectId, userId);

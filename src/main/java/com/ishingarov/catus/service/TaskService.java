@@ -8,8 +8,11 @@ public interface TaskService {
 
     TaskModel getTask(Integer taskId);
 
-    TaskModel createTask(TaskModel taskModel);
+    TaskModel createTask(TaskModel model);
 
     void deleteTask(Integer taskId);
 
+    TaskModel changeTaskInfo(TaskModel model);
+
+    TaskModel changeTaskStatus(TaskModel model);
 }
