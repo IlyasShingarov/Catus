@@ -41,21 +41,6 @@ create table if not exists catus.projects
     references catus.users(id)
     );
 
-create table if not exists catus.project_users
-(
-    user_id int not null,
-    project_id int not null,
-
-    constraint project_users_user_fk
-    foreign key (user_id)
-    references catus.users(id),
-
-    constraint project_users_project_fk
-    foreign key (project_id)
-    references catus.projects(id)
-
-    );
-
 create table if not exists catus.tasks
 (
     id serial
@@ -76,8 +61,23 @@ create table if not exists catus.tasks
 
     project int not null,
     constraint tasks_project_fk
-    foreign key(project)
-    references catus.projects(id)
+        foreign key(project)
+            references catus.projects(id) on delete cascade
+    );
+
+create table if not exists catus.project_users
+(
+    user_id int not null,
+    project_id int not null,
+
+    constraint project_users_user_fk
+    foreign key (user_id)
+    references catus.users(id),
+
+    constraint project_users_project_fk
+        foreign key (project_id)
+            references catus.projects(id)
+
     );
 
 

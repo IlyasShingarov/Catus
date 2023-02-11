@@ -1,5 +1,6 @@
 package com.ishingarov.catus.dto.group;
 
+import com.ishingarov.catus.model.domain.GroupInfo;
 import com.ishingarov.catus.model.domain.GroupModel;
 import com.ishingarov.catus.model.domain.GroupModelSlim;
 import org.mapstruct.Mapper;
@@ -13,16 +14,18 @@ public interface GroupMapper {
 
     List<GroupResponseSlim> mapModelOnResponse(List<GroupModelSlim> model);
 
-    GroupListResponse mapModelOnListResponse(List<GroupModelSlim> groups, Integer total);
+    GroupListResponse toListResponse(List<GroupModelSlim> groups, Integer total);
 
     GroupResponse mapModelOnResponse(GroupModel model);
 
     @Mapping(target = "userCount", ignore = true)
     @Mapping(target = "id", ignore = true)
-    GroupModelSlim mapRequestOnSlimModel(CreateGroupRequest request);
+    GroupModelSlim toSlimModel(CreateGroupRequest request);
 
     @Mapping(target = "userCount", ignore = true)
     @Mapping(target = "id", source = "groupId")
-    GroupModelSlim mapRequestOnSlimModel(Integer groupId, UpdateGroupRequest request);
+    GroupModelSlim toSlimModel(Integer groupId, UpdateGroupRequest request);
+
+    GroupInfo toModel(GroupModelSlim model);
 
 }

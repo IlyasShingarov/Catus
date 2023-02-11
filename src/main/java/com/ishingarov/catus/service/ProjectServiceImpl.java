@@ -44,14 +44,23 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     public List<UserModel> getProjectUsers(Integer id) {
-        return userModelMapper.mapEntityOnModel(
+        return userModelMapper.toModel(
                 userRepository.findAllByProjectsContaining(
                         projectRepository.getById(id)));
     }
 
     @Override
     public void deleteProject(Integer id) {
-        projectRepository.deleteById(id);
+        var project = projectRepository.findById(id);
+        if (project.isPresent()) {
+            project.get().getTasks().clear();
+            var users = project.get().getUsers();
+            for (var user : users) {
+                user.getProjects().remove(project.get());
+                userRepository.save(user);
+            }
+            projectRepository.deleteById(id);
+        }
     }
 
     @Override
@@ -66,14 +75,14 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
-    public ProjectModel addMember(Integer projectId, Integer userId) {
+    public UserModel addMember(Integer projectId, Integer userId) {
         var project = projectRepository.findById(projectId).orElseThrow(EntityNotFoundException::new);
         var user = userRepository.findById(userId).orElseThrow(EntityNotFoundException::new);
         user.getProjects().add(project);
         project.getUsers().add(user);
         project = projectRepository.save(project);
         user = userRepository.save(user);
-        return projectModelMapper.toModel(project);
+        return userModelMapper.toModel(user);
     }
 
     @Override

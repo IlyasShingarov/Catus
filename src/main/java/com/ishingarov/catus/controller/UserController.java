@@ -15,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
 
 @Slf4j
@@ -32,7 +33,7 @@ public class UserController {
 
     @Operation(summary = "Получение всех пользователей")
     @GetMapping
-    @PreAuthorize("hasAnyAuthority('SCOPE_ADMIN')")
+    @PreAuthorize("hasAnyAuthority('SCOPE_ADMIN', 'SCOPE_TEACHER')")
     public UserListResponse getUsers() {
         log.trace("Got GET request on {}", "/api/v1/users");
         var users = userService.getUsers();
@@ -84,14 +85,16 @@ public class UserController {
         log.trace("Got PATCH request on {}/{}", baseUrl, userId);
         log.trace("Request payload: {}", request);
         var model = userMapper.mapRequestOnModel(request, userId);
-        var response = userMapper.mapModelToSlimResponse(userService.updateGroup(model));
+        var response = userMapper.mapModelToSlimResponse(
+                userService.updateGroup(model)
+        );
         log.trace("Response payload: {}", response);
         return response;
     }
 
     @Operation(summary = "Обновление пользователя")
     @PutMapping("/{userId}")
-    @PreAuthorize("@userAccessProvider.checkIfUpdateAllowed(#userId)")
+    @PreAuthorize("@userAccessProviderImpl.checkIfUpdateAllowed(#userId)")
     public UserResponseSlim updateUser(@PathVariable Integer userId, @RequestBody UpdateUserRequest request) {
         log.trace("Got PUT request on {}/{}", baseUrl, userId);
         var user = userMapper.mapRequestOnModel(userId, request);
@@ -104,7 +107,7 @@ public class UserController {
     @Operation(summary = "Удаление пользователя")
     @DeleteMapping("/{userId}")
     @ResponseStatus(HttpStatus.OK)
-    @PreAuthorize("@userAccessProvider.checkIfDeleteAllowed(#userId)")
+    @PreAuthorize("@userAccessProviderImpl.checkIfDeleteAllowed(#userId)")
     public void deleteUser(@PathVariable Integer userId) {
         log.trace("Got DELETE request on {}/{}", baseUrl, userId);
         try {

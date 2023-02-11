@@ -3,9 +3,11 @@ package com.ishingarov.catus.controller;
 import com.ishingarov.catus.dto.project.*;
 import com.ishingarov.catus.dto.user.UserListResponse;
 import com.ishingarov.catus.dto.user.UserMapper;
+import com.ishingarov.catus.dto.user.UserResponseSlim;
 import com.ishingarov.catus.model.domain.UserModel;
 import com.ishingarov.catus.service.ProjectService;
 import com.ishingarov.catus.service.TokenService;
+import com.ishingarov.catus.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -29,6 +31,24 @@ public class ProjectController {
     private final ProjectMapper projectMapper;
     private final UserMapper userMapper;
     private final TokenService tokenService;
+    private final UserService userService;
+
+    // TODO Сделать так, чтобы получались только те проекты, которые доступны для авторизованного пользователя
+    @Operation(summary = "Получение всех проектов")
+    @GetMapping
+    public ProjectListResponse getProjects() {
+        log.trace("Got GET request on {}", baseUrl);
+        var user = tokenService.getCurrentUser();
+        var projects = switch (user.role()) {
+            case ADMIN -> projectService.getProjects();
+            case TEACHER -> userService.getManagedProjects(user.id());
+            case STUDENT -> userService.getUserProjects(user.id());
+        };
+
+        var response = projectMapper.toListResponse(projects, projects.size());
+        log.trace("Response payload: {}", response);
+        return response;
+    }
 
     @Operation(summary = "Получение проекта по его идентификатору")
     @GetMapping("/{projectId}")
@@ -76,7 +96,7 @@ public class ProjectController {
 
     @Operation(summary = "Удаление проекта")
     @DeleteMapping("/{projectId}")
-    @PreAuthorize("@projectAccessProvider.checkIfDeleteAllowed(#projectId)")
+    @PreAuthorize("@projectAccessProviderImpl.checkIfDeleteAllowed(#projectId)")
     public void deleteProject(@PathVariable Integer projectId) {
         log.trace("Got POST request on {}/{}", baseUrl, projectId);
         log.debug("Deleting project with id '{}'", projectId);
@@ -87,14 +107,13 @@ public class ProjectController {
     // FIXME
     @Operation(summary = "Добавление участника в проект")
     @PutMapping("/{projectId}/users")
-    @PreAuthorize("@projectAccessProvider.checkIfUpdateAllowed(#projectId)")
-    public ProjectResponse addUserToProject(@PathVariable Integer projectId,
-                                            @RequestBody ProjectAddUserRequest request) {
+    @PreAuthorize("@projectAccessProviderImpl.checkIfUpdateAllowed(#projectId)")
+    public UserResponseSlim addUserToProject(@PathVariable Integer projectId,
+                                             @RequestBody ProjectAddUserRequest request) {
         log.trace("Got PUT request on {}/{}/users", baseUrl, projectId);
 
         log.debug("Adding user '{}' to project  with id '{}'", request.userId(), projectId);
-        var response = projectMapper.toResponse(projectService.addMember(projectId, request.userId()));
-        log.debug("User added. New user count: {}", response.userCount());
+        var response = userMapper.mapModelToSlimResponse(projectService.addMember(projectId, request.userId()));
         log.trace("Response payload: {}", response);
 
         return response;
@@ -102,7 +121,7 @@ public class ProjectController {
 
     @Operation(summary = "Обновление информации о проекте")
     @PutMapping("/{projectId}")
-    @PreAuthorize("@projectAccessProvider.checkIfUpdateAllowed(#projectId)")
+    @PreAuthorize("@projectAccessProviderImpl.checkIfUpdateAllowed(#projectId)")
     public ProjectResponseSlim updateProject(@PathVariable Integer projectId,
                                              @RequestBody UpdateProjectRequest request) {
         log.trace("Got PUT request on {}/{}", baseUrl, projectId);
@@ -130,7 +149,7 @@ public class ProjectController {
 
     @Operation(summary = "Выход из проекта")
     @DeleteMapping("/{projectId}/users/{userId}")
-    @PreAuthorize("@projectAccessProvider.checkIfUpdateAllowed(#projectId)")
+    @PreAuthorize("@projectAccessProviderImpl.checkIfUpdateAllowed(#projectId)")
     public void deleteUserFromProject(@PathVariable Integer projectId,
                                       @PathVariable @Min(1) Integer userId) {
         log.trace("Got DELETE request on {}/{}/users/{}", baseUrl, projectId, userId);

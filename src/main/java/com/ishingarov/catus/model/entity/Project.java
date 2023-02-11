@@ -40,11 +40,11 @@ public class Project {
     private User createdBy;
 
     @Builder.Default
-    @OneToMany(mappedBy = "project")
+    @OneToMany(mappedBy = "project", cascade = CascadeType.REMOVE)
     private Set<Task> tasks = new LinkedHashSet<>();
 
     @Builder.Default
-    @ManyToMany(mappedBy = "projects")
+    @ManyToMany(mappedBy = "projects", cascade = CascadeType.DETACH)
     private Set<User> users = new LinkedHashSet<>();
 
     @Override

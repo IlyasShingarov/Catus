@@ -26,6 +26,8 @@ public interface UserService {
 
     List<ProjectModel> getUserProjects(Integer id);
 
+    List<ProjectModel> getManagedProjects(Integer id);
+
     Project createProject(Project project);
 
     UserModel getUserByLogin(String login);

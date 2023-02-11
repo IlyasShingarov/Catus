@@ -7,6 +7,6 @@ public record UserModel(Integer id,
                         String name,
                         UserRole role,
                         String password,
-                        Integer groupId
+                        GroupInfo group
 ) {
 }

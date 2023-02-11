@@ -27,23 +27,6 @@ public class UserServiceImpl implements UserService {
     private final GroupRepository groupRepository;
     private final ProjectRepository projectRepository;
     private final ProjectModelMapper projectModelMapper;
-
-//
-////    private final UserMapper userMapper;
-////    private final ProjectMapper projectMapper;
-//
-//    // TODO
-//    // Add logging
-//    // Think about error hadnling
-//        // Почитай как адекватно экспешены юзать, придурок
-//    // Think about procedures:
-//        // Add to group
-//        // Add to project -- Add project to
-//        //
-//
-
-    // Add mapping
-
     private final PasswordEncoder passwordEncoder;
 
     @Override
@@ -57,35 +40,44 @@ public class UserServiceImpl implements UserService {
                 .build();
 
         var user = userRepository.save(userEntity);
-        return userModelMapper.mapEntityOnModel(user);
+        return userModelMapper.toModel(user);
     }
 
     @Override
     public UserModel updateGroup(UserModel userModel) {
         var entity = userRepository.findById(userModel.id())
                 .orElseThrow(EntityNotFoundException::new);
-        var group = groupRepository.getById(userModel.groupId());
-        entity.setInGroup(group);
+        if (userModel.group().id() != null) {
+            var group = groupRepository.getById(userModel.group().id());
+            entity.setInGroup(group);
+        } else {
+            entity.setInGroup(null);
+        }
         entity = userRepository.save(entity);
-        return userModelMapper.mapEntityOnModel(entity);
+        return userModelMapper.toModel(entity);
     }
 
     @Override
     public UserModel updateUser(UserModel userModel) {
-        return null;
+        var user = userRepository.findById(userModel.id())
+                .orElseThrow(EntityNotFoundException::new);
+        user = userModelMapper.toEntity(userModel, user);
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        user = userRepository.save(user);
+        return userModelMapper.toModel(user);
     }
 
     @Override
     public List<UserModel> getUsers() {
         var users = userRepository.findAll();
-        return userModelMapper.mapEntityOnModel(users);
+        return userModelMapper.toModel(users);
     }
 
     @Override
     public UserModel getUser(Integer id) {
         var user = userRepository.findById(id)
                 .orElseThrow(EntityNotFoundException::new);
-        return userModelMapper.mapEntityOnModel(user);
+        return userModelMapper.toModel(user);
     }
 
     @Override
@@ -101,13 +93,21 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public List<ProjectModel> getManagedProjects(Integer id) {
+        var user = userRepository.findById(id)
+                .orElseThrow(EntityNotFoundException::new);
+        return projectModelMapper.toModel(
+                user.getManagedProjects().stream().toList());
+    }
+
+    @Override
     public Project createProject(Project project) {
         return null;
     }
 
     @Override
     public UserModel getUserByLogin(String login) {
-        return userModelMapper.mapEntityOnModel(userRepository.findByLogin(login)
+        return userModelMapper.toModel(userRepository.findByLogin(login)
                 .orElseThrow(EntityNotFoundException::new));
     }
 }

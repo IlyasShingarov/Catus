@@ -1,15 +1,19 @@
 package com.ishingarov.catus.controller;
 
 import com.ishingarov.catus.dto.comment.*;
+import com.ishingarov.catus.repository.CommentRepository;
 import com.ishingarov.catus.service.CommentService;
 import com.ishingarov.catus.service.TaskService;
 import com.ishingarov.catus.service.TokenService;
+import com.ishingarov.catus.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.ArrayList;
 
 @Slf4j
 @RestController
@@ -18,9 +22,11 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1/projects/{projectId}/tasks/{taskId}/comments")
 @Tag(name = "Комментарии", description = "Методы взаимодействия с коллекцией комментариев")
 public class CommentController {
+    private final CommentRepository commentRepository;
 
     private final CommentMapper commentMapper;
     private final CommentService commentService;
+    private final UserService userService;
 
     @Operation(summary = "Изменение содержания комментария")
     @PutMapping("/{commentId}")
@@ -40,15 +46,22 @@ public class CommentController {
     @Operation(summary = "Получение комментария")
     @GetMapping("/{commentId}")
     public CommentResponse getComment(@PathVariable Integer commentId) {
-        return commentMapper.toResponse(commentService.getCommentById(commentId));
+        var comment = commentService.getCommentById(commentId);
+        var author = userService.getUser(comment.userId());
+        return commentMapper.toResponse(comment, author);
     }
 
     @Operation(summary = "Получение списка комментариев задачи")
     @GetMapping
     public CommentListResponse getTaskComments(@PathVariable Integer taskId,
                                                @PathVariable String projectId) {
-        var comments = commentService.getCommentsByTaskId(taskId);
-        return commentMapper.toListResponse(comments, comments.size());
+        var comments = commentService.getCommentsByTaskId(taskId)
+                .stream().map(
+                        comment -> commentMapper
+                                .toResponse(comment, userService
+                                        .getUser(comment.
+                                                userId()))).toList();
+        return new CommentListResponse(comments, comments.size());
     }
 
     @Operation(summary = "Создание комментария к задаче")
@@ -57,7 +70,8 @@ public class CommentController {
                                        @RequestBody CreateCommentRequest request) {
         var model = commentMapper.toModel(request, taskId);
         var comment = commentService.createComment(model);
-        var response = commentMapper.toResponse(comment);
+        var author = userService.getUser(comment.userId());
+        var response = commentMapper.toResponse(comment, author);
 
         log.trace("Response payload: {}", response);
         return response;

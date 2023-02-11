@@ -33,7 +33,7 @@ public class GroupController {
         var groups = groupService.getGroups();
         log.debug("Fetched {} groups", groups.size());
 
-        var response = groupMapper.mapModelOnListResponse(groups, groups.size());
+        var response = groupMapper.toListResponse(groups, groups.size());
         log.trace("Response payload: {}", response);
 
         return response;
@@ -59,7 +59,7 @@ public class GroupController {
     public GroupResponseSlim createGroup(@Valid @RequestBody CreateGroupRequest request) {
         log.trace("Got POST request on {}", baseUrl);
         log.trace("Request payload: {}", request);
-        var model = groupMapper.mapRequestOnSlimModel(request);
+        var model = groupMapper.toSlimModel(request);
 
         log.debug("Creating group '{}'", request.name());
         model = groupService.createGroup(model);
@@ -75,7 +75,7 @@ public class GroupController {
     @PreAuthorize("hasAnyAuthority('SCOPE_ADMIN', 'SCOPE_TEACHER')")
     public GroupResponseSlim updateGroup(@PathVariable Integer groupId, @RequestBody UpdateGroupRequest request) {
         log.trace("Got POST request on {}", baseUrl);
-        var model = groupMapper.mapRequestOnSlimModel(groupId, request);
+        var model = groupMapper.toSlimModel(groupId, request);
 
         log.debug("Changing group '{}' info", groupId);
         model = groupService.updateGroup(model);

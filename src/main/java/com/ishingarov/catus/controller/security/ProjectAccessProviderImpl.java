@@ -4,9 +4,10 @@ import com.ishingarov.catus.model.UserRole;
 import com.ishingarov.catus.service.ProjectService;
 import com.ishingarov.catus.service.TokenService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
-@Service
+@Component
 @RequiredArgsConstructor
 public class ProjectAccessProviderImpl implements ProjectAccessProvider {
 

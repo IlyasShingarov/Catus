@@ -23,7 +23,7 @@ public interface ProjectService {
 
     void removeMember(Integer projectId, Integer userId);
 
-    ProjectModel addMember(Integer projectId, Integer userId);
+    UserModel addMember(Integer projectId, Integer userId);
 
     ProjectModel updateProject(ProjectModel projectEntity);
 }

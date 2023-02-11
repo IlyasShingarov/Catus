@@ -34,7 +34,10 @@ public class AuthController {
         log.trace("Request body: {}", request);
         var token = getTokenByLoginAndPassword(request.login(), request.password());
         log.trace("Generated token: {}", token);
-        return new TokenResponse(token);
+        return new TokenResponse(
+                token,
+                userMapper.mapModelToSlimResponse(userService.getUserByLogin(request.login()))
+        );
     }
 
     @Operation(summary = "Регистрация нового пользователя")
@@ -47,14 +50,16 @@ public class AuthController {
                 userMapper.mapRequestOnModel(request));
         var token = getTokenByLoginAndPassword(request.login(), request.password());
         log.trace("Generated token: {}", token);
-        return new TokenResponse(token);
+        return new TokenResponse(token, userMapper.mapModelToSlimResponse(user));
     }
 
     @Operation(summary = "Обновление токена аутентификации", security = @SecurityRequirement(name = "bearerAuth"))
     @GetMapping("/token/refresh")
     @PreAuthorize("isAuthenticated()")
     public TokenResponse refreshToken(Authentication authentication) {
-        return new TokenResponse(tokenService.generateToken(authentication));
+        var user = tokenService.getCurrentUser();
+        var token = tokenService.refreshToken(authentication, user.role());
+        return new TokenResponse(token, userMapper.mapModelToSlimResponse(user));
     }
 
     private String getTokenByLoginAndPassword(String login, String password) {
